@@ -4,7 +4,7 @@
 
 Welcome to a destroyed world. It's up to you to put it back together. 
 
-## DEMO?
+## DEMO
 Watch a demo of the game in action here!
 https://www.youtube.com/watch?v=qeQqX0J-Yzk
 

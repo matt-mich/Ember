@@ -4,6 +4,10 @@
 
 Welcome to a destroyed world. It's up to you to put it back together. 
 
+## DEMO?
+Watch a demo of the game in action here!
+https://www.youtube.com/watch?v=qeQqX0J-Yzk
+
 ## Why?
 
 The purpose of the game is to have an always available game world for you to modify and interact with. Every way to play is synchronized in real time, and actions are carried over between play styles.

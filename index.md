@@ -1,37 +1,16 @@
 ## Ember Needs Your Help!
-<img src="HTML_Screen.png" width="200">
-<img src="UE4_Screen.png" width="200">
+<img src="https://raw.githubusercontent.com/matt-mich/Ember/gh-pages/HTML_Screen.PNG" height="300">
+<img src="https://raw.githubusercontent.com/matt-mich/Ember/gh-pages/UE4_Screen.PNG" height="300">
 
-Welcome to a destroyed world.
+Welcome to a destroyed world. It's up to you to put it back together. 
 
-### Markdown
+## Why?
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+The purpose of the game is to have an always available game world for you to modify and interact with. Every way to play is synchronized in real time, and actions are carried over between play styles.
 
-```markdown
-Syntax highlighted code block
+## How does it work?
 
-# Header 1
-## Header 2
-### Header 3
+The game itself works on the principles of asymmetrical game design. This is usually used for competitive games where one team has a different game interface than another, such as Left4Dead wherein one team plays humans and the other zombies. This is an asymmetrical system in terms of weapons and win-states, but they're still seeing the same game. Another example is the VR game *'Keep talking and No One Explodes'* where one player disarms a bomb in VR while the other player instructs them without seeing the game itself. What *Ember and the Ashlands* aims to accomplish is to create an asymmetrical single player experience where the same game can be played in different ways. 
 
-- Bulleted
-- List
+This took a lot of research into how to get it right, but the core premise revolves around a single server that can accept requests to update the game world data status, and requests to read from it. Through frequent check-ins, the game is able to be effectively run on the data dispensing server (Running on Python with Flask), and communicate the current game state to each of the platforms running the game,and can even do it simultaneously!
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/matt-mich/Ember/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.

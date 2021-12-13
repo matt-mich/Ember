@@ -1,0 +1,15 @@
+body {
+    margin:0;
+    background-color: #111111;
+    overflow: hidden; /* Hide scrollbars */
+
+}
+
+canvas {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    height: 100vh; /* Fallback for browsers that do not support Custom Properties */
+    height: calc(var(--vh, 1vh) * 100);
+}
+

@@ -2,13 +2,13 @@
 
 <html>
     <head>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}?v=1.{{get_next_version()}}">
         <body>
             <script src="jquery-3.6.0.min.js"></script>
             <script src="phaser.js"></script>
-            <script src="gameworld.js?v=1.5"></script>
+            <script src="gameworld.js?v=1.{{get_next_version()}}"></script>
 
-            <script src="game.js?v=1.5"></script>
+            <script src="game.js?v=1.{{get_next_version()}}"></script>
  
         </body>
     </head>

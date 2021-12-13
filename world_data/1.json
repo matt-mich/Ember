@@ -1,0 +1,32 @@
+{
+    "events": [
+        [
+            "dishes",
+            1639380676
+        ],
+        [
+            "dishes",
+            1639380740
+        ],
+        [
+            "dishes",
+            1639380747
+        ],
+        [
+            "dishes",
+            1639380751
+        ]
+    ],
+    "resources": {
+        "energy": 0,
+        "food": 0,
+        "morale": 0,
+        "water": 4
+    },
+    "shadow_state": {
+        "0": "crops_1",
+        "1": "empty",
+        "2": "empty",
+        "3": "empty"
+    }
+}

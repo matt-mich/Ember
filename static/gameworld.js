@@ -3,10 +3,7 @@ var g_height = 0
 
 function set_height_width(){
     g_width = window.innerWidth
-    g_height = window.innerHeight - 20
-    if (g_width < g_height){
-        g_height -= 100
-    }
+    g_height = window.innerHeight
     return [g_width, g_height]
 }
 
@@ -15,22 +12,85 @@ var right_arrow = null
 var debug_txt_box = null
 var bg = null
 var placement_shadow = null
+var context = null
 var graphics = null
 var graphics_no_draw = null
 var worldspace = null
 var Rgb = Phaser.Display.Color.GetColor; 
 var num_buttons = 0
 
+
 var buildings = ["empty","crops_1","crops_2"]
 
-var shadow_state = {
-    0:"crops_1",
-    1:"empty",
-    2:"empty",
-    3:"empty",
+var world_data = {
+    'shadow_state': {
+        0:"crops_1",
+        1:"empty",
+        2:"empty",
+        3:"empty",
+    },
+    'resources':{
+        'water':0,
+        'energy':0,
+        'food':0,
+        'morale':0
+    },
+    'events':[
+        // Format: Taskname, time (in seconds from unix time) 
+        //['dishes','1639297836']
+    ]
 }
+
+
+// Refresh page if session is broken.
+function check_session_validity(){
+    getData("","/ask/valid_session",check_session_validity_callback)    
+
+}
+function check_session_validity_callback(data){
+    if (data.session == "valid"){
+        return
+    }else{
+        window.location.reload()
+    }
+}
+
+refresh_world_data()
+
+function refresh_world_data(){
+    getData("","/ask/world_state",update_world_data)    
+}
+
+function update_world_data(data){
+    console.log(data)
+    if (data.status == "Need_World_Data"){
+        send_world_update()
+    }else{
+        set_local_world_data(data)
+    }
+}
+
+function send_world_update(){
+    addData(JSON.stringify(world_data),"/tell/world_state")
+}
+
+function set_local_world_data(data){
+    if (data.shadow_state != undefined){
+        world_data.shadow_state = data.shadow_state
+    }
+    if (data.resources != undefined){
+        world_data.resources = data.resources
+        console.log("REC:")
+        console.log(data.resources)
+        
+    }
+    if (data.events != undefined){
+        world_data.events = data.events
+    }
+}
+
 function setShadowState(index,value){
-    shadow_state[index] = value
+    world_data.shadow_state[index] = value
     trigger_server_update()
 }
 
@@ -46,7 +106,7 @@ function reset_convo(){
 }
 
 function upgrade_all(){
-    shadow_state = {
+    world_data.shadow_state = {
         0:"crops_2",
         1:"crops_2",
         2:"crops_2",
@@ -56,8 +116,9 @@ function upgrade_all(){
 }
 
 function trigger_server_update(){
-    addData(MakeUE4JSON(),"/tell/buildings")
-    addData(JSON.stringify({"count":num_convo}),"/tell/ember")
+    send_world_update()
+    // addData(MakeUE4JSON(),"/tell/buildings")
+    // addData(JSON.stringify({"count":num_convo}),"/tell/ember")
 }
 
 function getDebugConvo(){
@@ -86,6 +147,45 @@ function getDebugConvo(){
             {
                 "text":resp3_string,
                 "func":resp3_func
+            },
+        ]
+    }
+}
+
+function task_dishes(){
+    getData("","/tell/task/dishes",update_world_data)    
+}
+
+function task_cleaned(){
+    
+}
+function task_groceries(){
+    
+}
+
+function getTaskList(){
+
+    t1_string = "I did the dishes!";
+    t2_string = "I cleaned my house.";
+    t3_string = "I got groceries!";
+
+    t1_func = task_dishes
+    t2_func = task_cleaned
+    t3_func = task_groceries
+    
+    return {
+        "tasks":[
+            {
+                "text":t1_string,
+                "func":t1_func
+            },
+            {
+                "text":t2_string,
+                "func":t2_func
+            },
+            {
+                "text":t3_string,
+                "func":t3_func
             },
         ]
     }
@@ -347,7 +447,7 @@ class Character{
         
         this.button_func = function(){
             console.log(this.index)
-            shadow_state[this.index] = buildings[getRandomInt(buildings.length)]
+            world_data.shadow_state[this.index] = buildings[getRandomInt(buildings.length)]
         }
         this.item.on('pointerdown', function (event) {
             active_dialog = new Dialog(this.context,this.graphics,this.portrait_img)
@@ -382,9 +482,9 @@ class Shadow extends UI_Button_Image{
             this.sprite.x = this.x
             this.sprite.y = this.y-20
         }
-        if(shadow_state[this.index] != this.curr_state){
-            this.sprite.setTexture(shadow_state[this.index])
-            this.curr_state = shadow_state[this.index]
+        if(world_data.shadow_state[this.index] != this.curr_state){
+            this.sprite.setTexture(world_data.shadow_state[this.index])
+            this.curr_state = world_data.shadow_state[this.index]
         }
 
     }
@@ -492,6 +592,8 @@ class DialogBox{
                 });    
             }
         }
+        this.finished = 1
+
     }
     destroy(){
         this.dialog_text.destroy()
@@ -555,32 +657,9 @@ class Dialog{
                 this.convo_dict['resp'][i]['func']
             ))
         }
+        
+
         this.finished = 0
-        // this.resp2_box = new DialogBox(context,
-        //     this.convo_x,
-        //     this.resp_base_height + (this.resp_height + this.resp_padding)*1,
-        //     this.convo_width,
-        //     this.resp_height,
-        //     this.convo_dict['resp2']
-        // )
-
-        // this.resp3_box = new DialogBox(context,
-        //     this.convo_x,
-        //     this.resp_base_height + (this.resp_height + this.resp_padding)*2,
-        //     this.convo_width,
-        //     this.resp_height,
-        //     this.convo_dict['resp3']
-        // )
-        // this.resp_box_1 = context.add.rectangle(g_width/2, 500, 500,50,Rgb(100,0,0))
-        // this.resp1_text = context.add.bitmapText(g_width/2-250, 480, 'gem','',30,"left")
-        // this.resp1_text.setOrigin(0,0)
-
-        // this.resp_box_2 = context.add.rectangle(g_width/2, 570, 500,50,Rgb(100,0,0))
-
-        // this.resp_box_3 = context.add.rectangle(g_width/2, 640, 500,50,Rgb(100,0,0))
-        // this.convo_string = new stringBuilder(this.convo_dict['convo'],this.dialog_text)
-        // this.resp1_string = new stringBuilder(this.convo_dict['resp1'],this.resp1_text)
-
 
         this.block.on('pointerdown', function (event) {
             if (active_dialog.finished){
@@ -596,10 +675,8 @@ class Dialog{
                         active_dialog.responses[i].finish()
                         console.log(active_dialog.responses[i].dialog_string.text_obj.text)    
                         return
-                    }
-                    
+                    }   
                 }
-
             }
         });
     }
@@ -634,12 +711,76 @@ class Dialog{
     }
 }
 
+class TaskDialog{
+    constructor(context,graphics) {
+        this.block = context.add.rectangle(0, 0, g_width,g_height,Rgb(0,20,0)).setAlpha(0.5)
+        this.block.setOrigin(0,0)
+        this.block.setInteractive()
+
+
+        this.tasks_dict = getTaskList()
+        
+        // this.dialog_box = context.add.rectangle(g_width/2, 400, 500,120,Rgb(100,0,0))
+        // this.dialog_text = context.add.bitmapText(g_width/2-200, 380, 'gem','',30,"left")
+        // this.dialog_text.setOrigin(0,0)
+        this.convo_width = 500
+        this.convo_height = 120
+        this.resp_height = 50
+        this.resp_padding = 20
+        
+        this.convo_x = g_width/2
+        this.convo_y = 400
+
+ 
+        this.resp_base_height = this.convo_y + this.convo_height
+        console.log(this.resp_base_height)
+        this.responses = []
+        for(let i = 0; i<this.tasks_dict['tasks'].length;i++){
+            this.responses.push(new DialogBox(context,
+                this.convo_x,
+                this.resp_base_height + (this.resp_height + this.resp_padding)*i,
+                this.convo_width,
+                this.resp_height,
+                this.tasks_dict['tasks'][i]['text'],
+                this.tasks_dict['tasks'][i]['func']
+            ))
+        }
+        console.log(this.responses.length)
+        for(let i = 0; i<this.responses.length;i++){
+            console.log(i)
+            this.responses[i].finish()
+        }
+        this.finished = 0
+
+        this.block.on('pointerdown', function (event) {
+            end_dialog()
+        });
+    }
+
+    update(){
+        for(let i = 0; i<this.responses.length;i++){
+            this.responses[i].update()
+        }
+    }
+
+    destroy(){
+        this.block.destroy()
+        for(let i = 0; i<this.responses.length;i++){
+            this.responses[i].destroy()
+        }
+    }
+}
+
+function open_task_dialog(){
+    active_dialog = new TaskDialog(context,graphics)
+}
+
 function set_ui(refresh = false){
     set_height_width()
 
     if(!refresh){
-
         debug_txt_box = this.add.bitmapText(10, 10,'gem','',16);
+        task_button = new UI_Button_Rect(this,graphics,100,100,50,50,undefined,undefined,"Tasks",open_task_dialog)
 
         // Only use 'this' context when being called from the gameworld.
         
@@ -653,17 +794,27 @@ function set_ui(refresh = false){
     right_arrow.item.y = g_height-100
     left_arrow.item.x = 100
     left_arrow.item.y = g_height-100
+
+    task_button.item.x = g_width-100
+    task_button.item.y = 100
+
     right_arrow.update()
     left_arrow.update()
-    
+    task_button.update()
+
     debug_txt_box.setText(
         "WID = " + g_width.toString() + '\n' +
         "HGT = " + g_height.toString() + '\n' + 
-        "FPS = " + game.loop.actualFps,)
+        "FPS = " + game.loop.actualFps + '\n\n' +
+        "Water  = " + world_data.resources.water+ '\n' +
+        "Energy = " + world_data.resources.energy+ '\n' +
+        "Food   = " + world_data.resources.food + '\n' +
+        "Morale = " + world_data.resources.morale
+        )
 }
 
 function MakeUE4JSON(){
-    send_json = JSON.stringify(shadow_state)
+    send_json = JSON.stringify(world_data.shadow_state)
     console.log(send_json)
     return(send_json)
 }
@@ -674,7 +825,7 @@ class gameworld extends Phaser.Scene{
     }
     preload(){
         graphics = this.add.graphics()
-
+        context = this
         this.load.image('test_smile','assets/smile_test.png')
         this.load.image('arrow','assets/arrow.png')
         this.load.image('bg','assets/test_bg.png')
@@ -700,7 +851,7 @@ class gameworld extends Phaser.Scene{
 
     create(){
         var debug_func = function(){
-            trigger_server_update()
+            refresh_world_data()
         }
 
         worldspace = new WorldSpace(this,graphics)
@@ -748,6 +899,27 @@ function refreshWorld(){
 
 }
 
+function getData(data,uri,callback_func){
+    url = document.location.origin +"/api" + uri
+    $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            contentType: "application/json; charset=utf-8",
+            crossDomain: true,
+            dataType: "json",
+            success: function (data, status, jqXHR) {
+                console.log(data);
+                callback_func(data)
+            },
+            error: function (jqXHR, status) {
+                // error handler
+                console.log(jqXHR);
+            }
+         });
+    }
+
+
 function addData(data,uri=null){
     let url = ''
     if(uri==null){
@@ -772,11 +944,16 @@ function addData(data,uri=null){
 
             }
          });
-   }
+    }
 
 window.addEventListener('resize', () => {
     let hw = set_height_width()
     game.scale.resize(hw[0], hw[1]);
     set_ui(refresh=true)
    // scene.cameras.main.setViewport(0,0,w,h)
+   // Useful trick from: https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
+   let vh = window.innerHeight * 0.01;
+   document.documentElement.style.setProperty('--vh', `${vh}px`); 
 });
+
+//var session_check_timer = setInterval(check_session_validity, 1000);

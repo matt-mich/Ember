@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+        <link rel="stylesheet" href="../static/styles/login.css">
+        <link rel="stylesheet" href="{{url_for('static',filename='styles/login.css')}}?v=1.{{get_next_version()}}">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <title>LOGIN</title>
+
+        <body>
+            <div class="main_title">
+                EMBER<br>AND THE ASHLANDS
+            </div>
+            
+            <script src="{{url_for('static',filename='js/jquery-3.6.0.min.js')}}"></script>
+            <div class="center_login">
+                {% for msg in get_flashed_messages() %}
+                    <div class="error_msg">{{ msg|safe }}</div>
+                {% endfor %}
+                <form action="{{ url_for('handle_login') }}" method="post">
+                <label for="world_id">World:</label><br>
+                <input type="text" id="world_id" name="world"><br>
+                <label for="pass">Password:</label><br>
+                <input type="password" id="pass" name="password">
+                <br>
+                <input type="checkbox" id="new_world" name="new_world" value="Create new World?">
+                <label for="new_world"> Create new World?</label>
+
+                <br>
+                <button type="submit" class='login_button'>ENTER WORLD</button>
+            </form>
+            </div>
+        </body>
+    </head>
+</html>

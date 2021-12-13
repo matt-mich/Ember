@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{url_for('static',filename='styles/game.css')}}?v=1.{{get_next_version()}}">
+        <body>
+            <script src="{{url_for('static',filename='/js/jquery-3.6.0.min.js')}}"></script>
+            <script src="{{url_for('static',filename='/js/phaser.js')}}"></script>
+            <script src="{{url_for('static',filename='gameworld.js')}}?v=1.{{get_next_version()}}"></script>
+            <script src="{{url_for('static',filename='game.js')}}?v=1.{{get_next_version()}}"></script> 
+        </body>
+    </head>
+</html>

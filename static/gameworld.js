@@ -152,6 +152,46 @@ function getDebugConvo(){
     }
 }
 
+function add_crops_to_plot(){
+    world_data['shadow_state'][curr_active_plot] = 'crops_1'
+    trigger_server_update()
+}
+
+function add_well_to_plot(){
+
+    trigger_server_update()
+}
+
+function getEmptyPlotConvo(){
+    convo_string = "What would you like to do?";
+//    resp1_string = "Thanks! Add another onto that!";
+    resp1_string = "Plant crops.";
+    resp2_string = "Build a well.";
+    resp3_string = "Nevermind.";
+
+    resp1_func = add_crops_to_plot
+    resp2_func = add_well_to_plot
+    resp3_func = nop
+    
+    return {
+        "convo":convo_string,
+        "resp":[
+            {
+                "text":resp1_string,
+                "func":resp1_func
+            },
+            {
+                "text":resp2_string,
+                "func":resp2_func
+            },
+            {
+                "text":resp3_string,
+                "func":resp3_func
+            },
+        ]
+    }
+}
+
 function task_dishes(){
     getData("","/tell/task/dishes",update_world_data)    
 }
@@ -450,21 +490,40 @@ class Character{
             world_data.shadow_state[this.index] = buildings[getRandomInt(buildings.length)]
         }
         this.item.on('pointerdown', function (event) {
-            active_dialog = new Dialog(this.context,this.graphics,this.portrait_img)
+            let convo = getDebugConvo()
+            active_dialog = new Dialog(this.context,this.portrait_img,convo)
         });
 
     }
 }
+
+function getPortraitName(index){
+    if(world_data['shadow_state'][index] == 'empty'){
+        return 'shadow'
+    }else{
+        return world_data['shadow_state'][index]
+    }
+}
+
+
+curr_active_plot = 0
 
 class Shadow extends UI_Button_Image{
     // Needs to store built objects.
     constructor(context,x,y,index) {
         var button_func = function(){
             console.log(this.index)
+            curr_active_plot = this.index
+            let portrait = getPortraitName(this.index)
+            let dialog = getEmptyPlotConvo()
+            active_dialog = new Dialog(this.context,portrait,dialog)
 
-            setShadowState(this.index,buildings[getRandomInt(buildings.length)])
+            // setShadowState(this.index,buildings[getRandomInt(buildings.length)])
         }
         super(context,x,y,200,100,'shadow',button_func,false)
+        this.context = context
+        this.item.context = context
+
         this.item.index = index
         this.index = index
         this.x = x
@@ -611,7 +670,7 @@ function end_dialog(){
 }
 
 class Dialog{
-    constructor(context,graphics,portrait_img) {
+    constructor(context,portrait_img,dialog) {
         this.block = context.add.rectangle(0, 0, g_width,g_height,Rgb(0,20,0)).setAlpha(0.5)
         this.block.setOrigin(0,0)
         this.block.setInteractive()
@@ -622,7 +681,7 @@ class Dialog{
         this.portrait_img.displayHeight = 190
         this.portrait_img.setOrigin(0.5,0)
         this.portrait.setOrigin(0.5,0)
-        this.convo_dict = getDebugConvo()
+        this.convo_dict = dialog
         
         // this.dialog_box = context.add.rectangle(g_width/2, 400, 500,120,Rgb(100,0,0))
         // this.dialog_text = context.add.bitmapText(g_width/2-200, 380, 'gem','',30,"left")
@@ -717,7 +776,6 @@ class TaskDialog{
         this.block.setOrigin(0,0)
         this.block.setInteractive()
 
-
         this.tasks_dict = getTaskList()
         
         // this.dialog_box = context.add.rectangle(g_width/2, 400, 500,120,Rgb(100,0,0))
@@ -730,7 +788,6 @@ class TaskDialog{
         
         this.convo_x = g_width/2
         this.convo_y = 400
-
  
         this.resp_base_height = this.convo_y + this.convo_height
         console.log(this.resp_base_height)
@@ -777,7 +834,6 @@ function open_task_dialog(){
 
 function set_ui(refresh = false){
     set_height_width()
-
     if(!refresh){
         debug_txt_box = this.add.bitmapText(10, 10,'gem','',16);
         task_button = new UI_Button_Rect(this,graphics,100,100,50,50,undefined,undefined,"Tasks",open_task_dialog)
@@ -867,6 +923,15 @@ class gameworld extends Phaser.Scene{
         });
     }
     update(){
+        if(fps_limiter != 0){
+            if (fps_limiter_counter <= fps_limiter){
+                fps_limiter_counter += 1
+                return
+            }else{
+                fps_limiter_counter = 0
+            }
+        }
+
         this.button1.update()
         worldspace.update()
         set_ui(true)
@@ -875,6 +940,10 @@ class gameworld extends Phaser.Scene{
         }
     }
 }
+
+var fps_limiter = 1
+var fps_limiter_counter = 0
+
 // Reference: http://phaser.io/examples/v3/view/game-objects/graphics/generate-texture-to-sprite
 function drawRect(r_graphics,x,y,w,h,rad,line_width,color,line_color=undefined){
     r_graphics.fillStyle(Rgb(color[0],color[1],color[2]), 1);
@@ -896,7 +965,6 @@ function drawRect(r_graphics,x,y,w,h,rad,line_width,color,line_color=undefined){
 }
 
 function refreshWorld(){
-
 }
 
 function getData(data,uri,callback_func){

@@ -235,7 +235,6 @@ task_to_recsource_vals = {
 
         
 def addResources_from_task(taskname):
-    print("HELLO")
     s_id = check_valid_session()
     if s_id:
         print(task_to_recsource_vals.keys())
@@ -246,8 +245,6 @@ def addResources_from_task(taskname):
         set_world_state_to_file()
 
 def addEvent(taskname):
-    print("HELLO EVENT")
-
     s_id = check_valid_session()
     if s_id:
         world_data_local_storage[s_id]['events'].append([taskname,round(time.time())])

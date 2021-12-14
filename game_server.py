@@ -46,6 +46,191 @@ latest_buildings = {
     3:"empty"
 }
 
+def setShadowState(index,value):
+    s_id = check_valid_session()
+    if s_id:
+        try:
+            world_data_local_storage[s_id]['shadow_state'][str(index)] = value 
+            world_data_local_storage[s_id]['shadow_state_change_time'][str(index)] = round(time.time()) 
+        except TypeError:
+            print("TYPE ERROR")
+            world_data_local_storage[s_id]['shadow_state'][index] = value 
+            world_data_local_storage[s_id]['shadow_state_change_time'][index] = round(time.time()) 
+        set_world_state_to_file()
+
+def convo_nop(dummy_var = None):
+    print("NO ACTION")
+    return
+
+def trade_food_morale(dummy_var = None):
+    s_id = check_valid_session()
+    if s_id:
+        if(world_data_local_storage[s_id]['resources']['food'] >=1):
+            world_data_local_storage[s_id]['resources']['food'] -= 1
+            world_data_local_storage[s_id]['resources']['morale'] += 1
+
+    return
+
+def destroy_building(location):
+    s_id = check_valid_session()
+    if s_id:
+        print(world_data_local_storage[s_id])
+        setShadowState(location,'empty')
+
+def harvest_crops(location):
+    s_id = check_valid_session()
+    if s_id:
+        world_data_local_storage[s_id]['resources']['food'] += 1
+        setShadowState(location,'empty')
+
+def water_crops(location):
+    s_id = check_valid_session()
+    if s_id:
+        if(world_data_local_storage[s_id]['resources']['water'] >=1):
+            world_data_local_storage[s_id]['resources']['water'] -= 1
+            setShadowState(location,'crops_2')
+            set_world_state_to_file()
+
+def water_from_well(location):
+    s_id = check_valid_session()
+    if s_id:
+        world_data_local_storage[s_id]['resources']['water'] += 1
+        set_world_state_to_file()
+
+def task_dishes(location=None):
+    s_id = check_valid_session()
+    if s_id:
+        world_data_local_storage[s_id]['resources']['water'] += 1
+        world_data_local_storage[s_id]['resources']['energy'] += 1
+        set_world_state_to_file()
+
+def task_clean(location=None):
+    s_id = check_valid_session()
+    if s_id:
+        world_data_local_storage[s_id]['resources']['energy'] += 1
+        world_data_local_storage[s_id]['resources']['morale'] += 1
+        set_world_state_to_file()
+def task_groceries(location=None):
+    s_id = check_valid_session()
+    if s_id:
+        world_data_local_storage[s_id]['resources']['food'] += 1
+        world_data_local_storage[s_id]['resources']['energy'] += 1
+        set_world_state_to_file()
+
+
+def plant_crops(location):
+    s_id = check_valid_session()
+    if s_id:
+        if(world_data_local_storage[s_id]['resources']['energy'] >=1):
+            world_data_local_storage[s_id]['resources']['energy'] -= 1
+            setShadowState(location,'crops_1')
+    
+
+def build_well(location):
+    s_id = check_valid_session()
+    if s_id:
+        print("ENERGY")
+        print(world_data_local_storage[s_id]['resources']['energy'])
+        if(world_data_local_storage[s_id]['resources']['energy'] >=1):
+            world_data_local_storage[s_id]['resources']['energy'] -= 1
+            setShadowState(location,'well')
+
+
+convo_list = {
+    "ember":{
+        "dialog":"Hello friend!",
+        "resp":[
+            "Hello!",
+            "Eat food. (-1 Food)",
+            "See ya!"
+        ]
+    },
+    "crops_1":{
+        "dialog":"You see young crops!",
+        "resp":[
+            "Water crops. (-1 Water)",
+            "Destroy crops.",
+            "Nevermind..."
+        ]
+    },
+    "crops_2":{
+        "dialog":"You see harvestable crops!",
+        "resp":[
+            "Harvest crops. (+1 Food)",
+            "Destroy crops.",
+            "Nevermind..."
+        ]
+    },
+    "well":{
+        "dialog":"You see a well!",
+        "resp":[
+            "Pull up bucket. (+1 Water)",
+            "Destroy well.",
+            "Nevermind..."
+        ]
+    },
+    "empty":{
+        "dialog":"You see an empty plot of ash!",
+        "resp":[
+            "Plant crops. (-1 Energy)",
+            "Build well (-1 Energy).",
+            "Nevermind..."
+        ]
+    },
+    "tasks":{
+        "dialog":"A mysterious box beckons you.",
+        "resp":[
+            "I did the dishes!",
+            "I cleaned my house!",
+            "I got groceries!"
+        ]
+    },
+}
+
+convo_list_internal = {
+    "ember":{
+        "resp":[
+            convo_nop,
+            trade_food_morale,
+            convo_nop,
+        ]
+    },
+    "crops_1":{
+        "resp":[
+            water_crops,
+            destroy_building,
+            convo_nop,
+        ]
+    },
+    "crops_2":{
+        "resp":[
+            harvest_crops,
+            destroy_building,
+            convo_nop,
+        ]
+    },
+    "well":{
+        "resp":[
+            water_from_well,
+            destroy_building,
+            convo_nop,
+        ]
+    },
+    "empty":{
+        "resp":[
+            plant_crops,
+            build_well,
+            convo_nop,
+        ]
+    },
+    "tasks":{
+        "resp":[
+            task_dishes,
+            task_clean,
+            task_groceries,
+        ]
+    },
+}
 
 def check_valid_session():
     try:
@@ -55,7 +240,6 @@ def check_valid_session():
     except KeyError:
         print("SESSION INVALID")
         return None
-
 
 ember_convo_count = 0
 
@@ -112,7 +296,6 @@ def handle_login():
     def handle_error(error):
         flash(error)  
         errors.append(error)
-
     world_id = str(request.form.get('world', None))
     world_pass = str(request.form.get('password', None))
     new_world = request.form.getlist('new_world')
@@ -150,39 +333,102 @@ def handle_login():
             handle_error("No world with that name exists.")
 
     return redirect(url_for('login_page'))
+
+
+@app.route('/handle_ue4_login', methods=['POST'])
+def handle_ue4_login():
+    errors = []
+    def handle_error(error):
+        errors.append(error)
+    login_info = request.get_json()
+
+    world_id = login_info['world']
+    world_pass = login_info['password']
+    new_world = login_info['new_world']
+    if new_world == 1:
+        print("Trying to create new world")
+    print(f"{world_id} {world_pass} ")
+    if world_id is None or world_id == '':
+        handle_error("No world name given")  
+    elif not world_id.isalnum() or not world_id.isascii():
+        handle_error("World name must be alphanumeric")
+    if world_pass is None or world_pass == '':
+        handle_error("No Password given")
+    elif not world_pass.isascii():
+        handle_error("Password has illegal characters")
+    if errors != []:
+        return redirect(url_for('login_page'))
+    cur = get_db().cursor()
+    cur.execute("SELECT * FROM worlds WHERE world_name =?",(world_id,))
+    rows = cur.fetchall()
+
+    if rows == []:
+        if new_world == 0:
+            handle_error("No world of that name exists yet.")
+        else:
+            s_key = create_new_world(world_id,world_pass)
+            session['world_id'] = s_key
+            get_world_state_from_file()
+            return jsonify(status="verified")
+    for row in rows:
+        print(row)
+        if row[1] == world_id:
+            hash_pass = sha256(str.encode(world_pass+sha_salt)).hexdigest()
+            if row[2] == hash_pass:
+                session['world_id'] = row[0]
+                get_world_state_from_file()
+                return jsonify(status="verified")
+        else:       
+            handle_error("No world with that name exists.")
+    if errors != []:
+        return jsonify(status=errors[0])
+    get_world_state_from_file()
+    return jsonify(status="verified")
     
+
 def get_world_state_from_file():
     s_id = check_valid_session()
-
     if(s_id == None):
         return None
     world_file = f"world_data/{s_id}.json"
     if path.isfile(world_file):
         with open(world_file,'r') as f:
             if stat(world_file).st_size != 0:
-                # data_string=f.read()
-                # world_data = json.dumps(data_string)
-                # print(data_string)
                 world_data = json.load(f)
                 set_world_local_memory(world_data)
-                return world_data   
+                return world_data
             else:
                 return None
     else:
-        return None
+        default_file = f"world_data/default.json"
+        with open(default_file,'r') as f:
+            if stat(default_file).st_size != 0:
+                world_data = json.load(f)
+                set_world_local_memory(world_data)
+                set_world_state_to_file()
+                return world_data
 
 def set_world_state_to_file():
     s_id = check_valid_session()
-    
-    if s_id in world_data_local_storage.keys():
-        world_data = world_data_local_storage[s_id]
-        print(f"worldstate from mem: {world_data}")
-    else:
-        world_data = request.get_json()
+    print("ATTEMPTING FILE SAVE")
+
     if s_id:
         try:
             with open(f"world_data/{s_id}.json",'w') as f:
+                f.write("")
+            with open(f"world_data/{s_id}.json",'w') as f:
+                world_data = {}
+                if s_id in world_data_local_storage.keys():
+                    world_data = world_data_local_storage[s_id]
+                    print(f"worldstate from mem: {world_data}")
+                else:
+                    world_data = request.get_json()
+                    print("DEFAULTING TO REQ")
+
                 json.dump(world_data,f,indent=4)
+
+                print("SAVED")
+
         except OSError:
             print("FILE ERROR")
             exit()
@@ -194,7 +440,7 @@ def set_world_local_memory(world_data):
     s_id = check_valid_session()
     if s_id and world_data:
         world_data_local_storage[s_id] = world_data
-
+        
 def set_world_local_memory_from_file():
     global world_data_local_storage
     world_data = get_world_state_from_file()
@@ -217,19 +463,43 @@ def ask_world_state():
     else:
         return world_data
 
-@app.route('/api/tell/world_state', methods=['POST'])
-def tell_world_state():
-    set_world_state_to_file()
+@app.route('/api/tell/convo_finish', methods=['POST'])
+def execute_convo():
     # print(request.get_json())
     s_id = check_valid_session()
     if s_id:
+        convo = request.get_json()
+        print("CONVO")
+        print(convo)
+        if convo['character'] in convo_list_internal.keys():
+            convo_list_internal[convo['character']]['resp'][convo['choice']](convo['location'])
+            
+        return world_data_local_storage[s_id]
+
+@app.route('/api/tell/world_state', methods=['POST'])
+def tell_world_state():
+    # print(request.get_json())
+    new_world_data = request.get_json()
+    s_id = check_valid_session()
+    if s_id:
         with open(f"world_data/{s_id}.json",'w') as f:
-            json.dump(request.get_json(),f,indent=4)
+            json.dump(new_world_data,f,indent=4)
+    set_world_local_memory(new_world_data)
+
     return jsonify(status="updated")
 
 task_to_recsource_vals = {
     "dishes":{
-        "water":1
+        "water":1,
+        "energy":1,
+    },
+    "clean":{
+        "morale":1,
+        "energy":1,
+    },
+    "groceries":{
+        "food":1,
+        "energy":1,
     }
 }
 
@@ -241,8 +511,6 @@ def addResources_from_task(taskname):
         if taskname in task_to_recsource_vals.keys():
             for elem in task_to_recsource_vals[taskname]:
                 world_data_local_storage[s_id]['resources'][elem] += task_to_recsource_vals[taskname][elem]
-
-        set_world_state_to_file()
 
 def addEvent(taskname):
     s_id = check_valid_session()
@@ -257,18 +525,10 @@ def addEvent(taskname):
 def tell_taskname(taskname):
     print(taskname)
     data_test = get_world_state_from_file()
-    if data_test == None:
-        print("Uh oh")
-    else:
-        print("what")
 
-    print(taskname)
-
-    if(taskname == "dishes"):
-        addEvent(taskname)
+    addEvent(taskname)
         
-    s_id = check_valid_session()
-    return world_data_local_storage[s_id]
+    return get_world_state_from_file()
 
 
 @app.route('/api/ask/valid_session', methods=['GET', 'POST'])
@@ -285,6 +545,13 @@ def game_resp():
 
 @app.route('/api/ask/buildings', methods=['GET', 'POST'])
 def game_buildings():
+        s_id = check_valid_session()
+        if s_id:
+            if s_id not in world_data_local_storage.keys() :
+                set_world_local_memory_from_file()
+            print(world_data_local_storage[s_id])
+            return Response(json.dumps(world_data_local_storage[s_id]['shadow_state']),  mimetype='application/json')
+
         return Response(json.dumps(latest_buildings),  mimetype='application/json')
 
 @app.route('/api/ask/ember', methods=['GET', 'POST'])
@@ -317,6 +584,30 @@ def set_count():
 
     return jsonify(
         text="Altering count")
+
+@app.route('/api/ask/resources',methods=['POST'])
+def get_resources():
+    s_id = check_valid_session()
+    if s_id:
+        return(world_data_local_storage[s_id]["resources"])
+    else:
+
+        return jsonify(text="Session_Error")
+
+
+@app.route('/api/ask/convo/<entity>',methods=['POST'])
+def get_single_convo(entity):
+    print("entity")
+    print("convo_list.keys()")
+    if entity in convo_list.keys():
+        print("FOUND ")
+        return(convo_list[entity])
+    else:
+        return {}
+
+@app.route('/api/ask/convo_list', methods=['POST'])
+def get_all_convos():
+    return convo_list
 
 @app.route('/game')
 def start_game():

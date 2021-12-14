@@ -20,14 +20,31 @@ var Rgb = Phaser.Display.Color.GetColor;
 var num_buttons = 0
 
 
-var buildings = ["empty","crops_1","crops_2"]
+var buildings = ["empty","crops_1","crops_2","well"]
 
-var world_data = {
+var harvest_times = {
+    "well":{
+        "harvest_time":20,
+        "reward":{"water":1}
+    },
+    "crops_1":{
+        "harvest_time":20,
+        "reward":{"food":1}
+    },
+}
+
+var world_data_default = {
     'shadow_state': {
-        0:"crops_1",
+        0:"empty",
         1:"empty",
         2:"empty",
         3:"empty",
+    },
+    'shadow_state_change_time': {
+        0:0,
+        1:0,
+        2:0,
+        3:0,
     },
     'resources':{
         'water':0,
@@ -40,6 +57,10 @@ var world_data = {
         //['dishes','1639297836']
     ]
 }
+
+var convo_list = []
+
+var world_data = {...world_data_default}
 
 
 // Refresh page if session is broken.
@@ -57,6 +78,30 @@ function check_session_validity_callback(data){
 
 refresh_world_data()
 
+function setShadowState(index, value){
+    world_data.shadow_state[index] = value
+    world_data.shadow_state_change_time[index] = new Date().getTime() / 1000
+    trigger_server_update()
+}
+function getShadowState(index,time){
+    if(time == undefined){
+        return world_data.shadow_state[index]
+    }else{
+        return world_data.shadow_state_change_time[index]
+    }
+}
+
+function addResources(typename,amount){
+    world_data.resources[typename] += amount
+    trigger_server_update()
+
+}
+
+function getResource(typename){
+    return world_data.resources[typename]
+}
+
+
 function refresh_world_data(){
     getData("","/ask/world_state",update_world_data)    
 }
@@ -71,12 +116,16 @@ function update_world_data(data){
 }
 
 function send_world_update(){
-    addData(JSON.stringify(world_data),"/tell/world_state")
+    return
+    addData(world_data,"/tell/world_state")
 }
 
 function set_local_world_data(data){
     if (data.shadow_state != undefined){
         world_data.shadow_state = data.shadow_state
+    }
+    if (data.shadow_state_change_time != undefined){
+        world_data.shadow_state_change_time = data.shadow_state_change_time
     }
     if (data.resources != undefined){
         world_data.resources = data.resources
@@ -89,30 +138,14 @@ function set_local_world_data(data){
     }
 }
 
-function setShadowState(index,value){
-    world_data.shadow_state[index] = value
-    trigger_server_update()
-}
-
 var num_convo = 0
 
 function add_convo_count(){
     num_convo += 1
 }
 
-
 function reset_convo(){
     num_convo = 0
-}
-
-function upgrade_all(){
-    world_data.shadow_state = {
-        0:"crops_2",
-        1:"crops_2",
-        2:"crops_2",
-        3:"crops_2",
-    }
-    trigger_server_update()
 }
 
 function trigger_server_update(){
@@ -121,17 +154,83 @@ function trigger_server_update(){
     // addData(JSON.stringify({"count":num_convo}),"/tell/ember")
 }
 
+
+// DIALOG FUNCTIONS
+function reset_world(){
+    world_data = {...world_data_default}
+    send_world_update()
+}
+
+function eat_food(){
+    if(getResource("food") >= 1){
+        addResources("food",-1)
+        addResources("morale",1)
+    }
+    trigger_server_update()
+
+}
+
+function add_crops_to_plot(){
+    if(getResource("energy") >= 1){
+        addResources("energy",-1)
+        setShadowState(curr_active_plot,'crops_1')
+    }
+    trigger_server_update()
+}
+
+function add_well_to_plot(){
+    if(getResource("energy") >= 1){
+        addResources("energy",-1)
+        setShadowState(curr_active_plot,'well')
+    }
+    trigger_server_update()
+}
+
+function water_plot(){
+    if(getResource("water") >= 1){
+        addResources("water",-1)
+    }
+    trigger_server_update()
+}
+
+function destroy_plot(){
+    setShadowState(curr_active_plot,'empty')
+    trigger_server_update()
+}
+function harvest_plot(){
+    setShadowState(curr_active_plot,'empty')    
+    addResources("food",1)
+    trigger_server_update()
+}
+function get_water_from_plot(){
+    addResources("water",1)
+    trigger_server_update()
+}
+
+function task_dishes(){    
+    getData("","/tell/task/dishes",update_world_data)    
+}
+
+function task_cleaned(){
+    getData("","/tell/task/clean",update_world_data)        
+}
+function task_groceries(){
+    getData("","/tell/task/groceries",update_world_data)            
+}
+// CONVERSATION FUNCTIONS
 function getDebugConvo(){
+    return convo_list['ember']
+    
     convo_string = "You've spoken to me " + num_convo.toString() + " times!";
 //    resp1_string = "Thanks! Add another onto that!";
     resp1_string = "Could you add another one?";
 
     resp2_string = "Please reset that.";
-    resp3_string = "Upgrade all buildings to corn.";
+    resp3_string = "Eat food. (-1 Food, +1 Morale)";
 
     resp1_func = add_convo_count
     resp2_func = reset_convo
-    resp3_func = upgrade_all
+    resp3_func = eat_food
     
     return {
         "convo":convo_string,
@@ -152,21 +251,20 @@ function getDebugConvo(){
     }
 }
 
-function add_crops_to_plot(){
-    world_data['shadow_state'][curr_active_plot] = 'crops_1'
-    trigger_server_update()
+function get_all_convos(){
+    getData("","/ask/convo_list",get_all_convos_callback)
 }
-
-function add_well_to_plot(){
-
-    trigger_server_update()
+function get_all_convos_callback(data){
+    convo_list = data
 }
 
 function getEmptyPlotConvo(){
-    convo_string = "What would you like to do?";
+    return convo_list['empty']
+    
+    convo_string = "You see an empty plot of ash.";
 //    resp1_string = "Thanks! Add another onto that!";
-    resp1_string = "Plant crops.";
-    resp2_string = "Build a well.";
+    resp1_string = "Plant crops.(-1 Energy)";
+    resp2_string = "Build a well. (-1 Energy)";
     resp3_string = "Nevermind.";
 
     resp1_func = add_crops_to_plot
@@ -192,16 +290,104 @@ function getEmptyPlotConvo(){
     }
 }
 
-function task_dishes(){
-    getData("","/tell/task/dishes",update_world_data)    
+function getCrops1Convo(){
+    return convo_list['crops_1']
+    
+    convo_string = "You see young crops.";
+//    resp1_string = "Thanks! Add another onto that!";
+    resp1_string = "Water crops.(-1 Water)";
+    resp2_string = "Destroy.";
+    resp3_string = "Nevermind.";
+
+    resp1_func = water_plot
+    resp2_func = destroy_plot
+    resp3_func = nop
+    
+    return {
+        "convo":convo_string,
+        "resp":[
+            {
+                "text":resp1_string,
+                "func":resp1_func
+            },
+            {
+                "text":resp2_string,
+                "func":resp2_func
+            },
+            {
+                "text":resp3_string,
+                "func":resp3_func
+            },
+        ]
+    }
 }
 
-function task_cleaned(){
+function getCrops2Convo(){
+    return convo_list['crops_2']
     
-}
-function task_groceries(){
+    convo_string = "You see crops.";
+//    resp1_string = "Thanks! Add another onto that!";
+    resp1_string = "Harvest.(+1 Food)";
+    resp2_string = "Destroy.";
+    resp3_string = "Nevermind.";
+
+    resp1_func = harvest_plot
+    resp2_func = destroy_plot
+    resp3_func = nop
     
+    return {
+        "convo":convo_string,
+        "resp":[
+            {
+                "text":resp1_string,
+                "func":resp1_func
+            },
+            {
+                "text":resp2_string,
+                "func":resp2_func
+            },
+            {
+                "text":resp3_string,
+                "func":resp3_func
+            },
+        ]
+    }
 }
+
+function getWellConvo(){
+    return convo_list['well']
+    
+    convo_string = "You see a well.";
+//    resp1_string = "Thanks! Add another onto that!";
+    resp1_string = "Pull up bucket.(+1 Water)";
+    resp2_string = "Destroy.";
+    resp3_string = "Nevermind.";
+
+    resp1_func = get_water_from_plot
+    resp2_func = destroy_plot
+    resp3_func = nop
+    
+    return {
+        "convo":convo_string,
+        "resp":[
+            {
+                "text":resp1_string,
+                "func":resp1_func
+            },
+            {
+                "text":resp2_string,
+                "func":resp2_func
+            },
+            {
+                "text":resp3_string,
+                "func":resp3_func
+            },
+        ]
+    }
+}
+
+
+
 
 function getTaskList(){
 
@@ -248,6 +434,18 @@ function occasionally(func,p){
     }
 }
 
+function nop(){
+    return 0
+}
+
+function scroll_left(){
+    worldspace.scroll_left()
+}
+
+function scroll_right(){
+    worldspace.scroll_right()
+}
+
 class UI_Button {
     constructor(context,x,y,w,h,button_func=nop,hold=false) {
         this.x = x;
@@ -277,22 +475,9 @@ class UI_Button {
     };
 }
 
-function nop(){
-    return 0
-}
-
-function scroll_left(){
-    worldspace.scroll_left()
-}
-
-function scroll_right(){
-    worldspace.scroll_right()
-}
-
 
 class UI_Button_Rect extends UI_Button{
     // g => graphics
-    
     constructor(context,g, x, y, w, h, rad=5, lw=2, text="",button_func=nop,hold=false) {
         super(context,x,y,w,h,button_func,hold)
         this.font_size = 16
@@ -487,24 +672,32 @@ class Character{
         
         this.button_func = function(){
             console.log(this.index)
-            world_data.shadow_state[this.index] = buildings[getRandomInt(buildings.length)]
+            setShadowState(this.index,buildings[getRandomInt(buildings.length)])
         }
         this.item.on('pointerdown', function (event) {
-            let convo = getDebugConvo()
-            active_dialog = new Dialog(this.context,this.portrait_img,convo)
+            let convo = convo_list['ember']
+            console.log(convo)
+            active_dialog = new Dialog(this.context,this.portrait_img,convo,'ember','na')
         });
 
     }
 }
 
 function getPortraitName(index){
-    if(world_data['shadow_state'][index] == 'empty'){
+    if(getShadowState(index) == 'empty'){
         return 'shadow'
     }else{
-        return world_data['shadow_state'][index]
+        return getShadowState(index)
     }
 }
 
+function end_dialog(){
+    if(active_dialog != null){
+        active_dialog.destroy()
+        active_dialog = null        
+    }
+    trigger_server_update()
+}
 
 curr_active_plot = 0
 
@@ -516,7 +709,26 @@ class Shadow extends UI_Button_Image{
             curr_active_plot = this.index
             let portrait = getPortraitName(this.index)
             let dialog = getEmptyPlotConvo()
-            active_dialog = new Dialog(this.context,portrait,dialog)
+
+            switch(getShadowState(this.index)){
+                case("empty"):
+                    dialog = getEmptyPlotConvo()
+                    break;
+                case("crops_1"):
+                    dialog = getCrops1Convo()    
+                    break;
+                case("crops_2"):
+                    dialog = getCrops2Convo()    
+                    break;
+                case("well"):
+                    dialog = getWellConvo()
+                    break;
+                default:
+                    dialog = getEmptyPlotConvo()    
+
+            }
+
+            active_dialog = new Dialog(this.context,portrait,dialog,getShadowState(this.index),this.index)
 
             // setShadowState(this.index,buildings[getRandomInt(buildings.length)])
         }
@@ -532,18 +744,56 @@ class Shadow extends UI_Button_Image{
         this.sprite.setOrigin(0.5,1)
         this.sprite.setScale(0.3)
         this.curr_state = ''
+        this.when_planted = null
+        this.last_update_time = null
+        this.percent_done = null
+        this.bmpText = context.add.bitmapText(x, y, 'gem', "done", 16);
 
     }
     update(){
-        this.item.x = this.x 
-        this.item.y = this.y 
+        let curr_building = getShadowState(this.index,undefined)
+        this.item.x = this.x
+        this.item.y = this.y
+        this.bmpText.x = this.x-20 
+        this.bmpText.y = this.y-200
+        if(curr_building == "crops_1"){
+            this.bmpText.y = this.y-150
+            this.when_planted = getShadowState(this.index,1)
+            console.log(this.when_planted)
+            if(this.when_planted == null){
+                setShadowState(this.index,'crops_1')
+                this.last_update_time = new Date().getTime() / 1000
+                this.percent_done = 0
+                this.bmpText.text = this.percent_done.toString() + "%"
+            }else{
+                this.last_update_time = new Date().getTime() / 1000
+                let seconds_since = this.last_update_time-this.when_planted
+                this.percent_done = Math.round(seconds_since/harvest_times["crops_1"]["harvest_time"]*100)
+                if(this.percent_done > 100){
+                    // console.log(this.last_update_time)
+                    // console.log(this.when_planted)
+                    setShadowState(this.index,"crops_2") 
+                    this.bmpText.y = this.y-300
+                    this.bmpText.text = "100%"        
+                }else{
+                    this.bmpText.text = this.percent_done.toString() + "%"
+                }
+            }
+
+        }else if (curr_building == "empty"){
+            this.bmpText.y = this.y-150
+            this.bmpText.text = ""
+        }else if (curr_building == "crops_2"){
+            this.bmpText.y = this.y-300
+            this.bmpText.text = "100%"
+        }
         if(this.sprite != null){
             this.sprite.x = this.x
             this.sprite.y = this.y-20
         }
-        if(world_data.shadow_state[this.index] != this.curr_state){
-            this.sprite.setTexture(world_data.shadow_state[this.index])
-            this.curr_state = world_data.shadow_state[this.index]
+        if(getShadowState(this.index)!= this.curr_state){
+            this.sprite.setTexture(getShadowState(this.index))
+            this.curr_state = getShadowState(this.index)
         }
 
     }
@@ -588,18 +838,38 @@ class stringBuilder{
     
 }
 
+function submit_dialog_choice(){
+    let character = this.character
+    let location = this.location
+    let choice = this.resp_index
+    // Tell convo location, character name, and choice to the
+    let data = {"character":character,"location":location,"choice":choice}
+    console.log(data)
+    getData(JSON.stringify(data),"/tell/convo_finish",update_world_data)
+}
+
 class DialogBox{
-    constructor(context,x,y,w,h,text,resp_func) {
+    constructor(context,x,y,w,h,text,resp_func,char,loc,resp_index) {
         this.x = x
         this.y = y
         this.w = w
         this.h = h
         this.color = [100,0,0]
-        
+
         this.resp_func = resp_func
         this.text = text
         this.font_size  = 30 
         this.dialog_box = context.add.rectangle(this.x, this.y, this.w,this.h,Rgb(this.color[0],this.color[1],this.color[2]))
+        if(char != undefined){
+            this.dialog_box.character = char
+        }
+        if(loc != undefined){
+            this.dialog_box.location = loc
+        }
+        if(resp_index != undefined){
+            this.dialog_box.resp_index = resp_index
+        }
+
         this.dialog_box.orig_color = this.color
         this.dialog_box.resp_func = this.resp_func
 
@@ -661,16 +931,9 @@ class DialogBox{
     
 }
 
-function end_dialog(){
-    if(active_dialog != null){
-        active_dialog.destroy()
-        active_dialog = null        
-    }
-    trigger_server_update()
-}
 
 class Dialog{
-    constructor(context,portrait_img,dialog) {
+    constructor(context,portrait_img,dialog,character,location) {
         this.block = context.add.rectangle(0, 0, g_width,g_height,Rgb(0,20,0)).setAlpha(0.5)
         this.block.setOrigin(0,0)
         this.block.setInteractive()
@@ -681,6 +944,7 @@ class Dialog{
         this.portrait_img.displayHeight = 190
         this.portrait_img.setOrigin(0.5,0)
         this.portrait.setOrigin(0.5,0)
+        console.log(dialog)
         this.convo_dict = dialog
         
         // this.dialog_box = context.add.rectangle(g_width/2, 400, 500,120,Rgb(100,0,0))
@@ -694,12 +958,13 @@ class Dialog{
         this.convo_x = g_width/2
         this.convo_y = 400
 
+        
         this.convo_box = new DialogBox(context,
             this.convo_x,
             this.convo_y,
             this.convo_width,
             this.convo_height,
-            this.convo_dict['convo'],
+            this.convo_dict['dialog'],
             nop
         )
 
@@ -707,14 +972,18 @@ class Dialog{
         console.log(this.resp_base_height)
         this.responses = []
         for(let i = 0; i<this.convo_dict['resp'].length;i++){
-            this.responses.push(new DialogBox(context,
+            let temp_box = new DialogBox(context,
                 this.convo_x,
                 this.resp_base_height + (this.resp_height + this.resp_padding)*i,
                 this.convo_width,
                 this.resp_height,
-                this.convo_dict['resp'][i]['text'],
-                this.convo_dict['resp'][i]['func']
-            ))
+                this.convo_dict['resp'][i],
+                submit_dialog_choice,
+                character,
+                location,
+                i
+            )       
+            this.responses.push(temp_box)
         }
         
 
@@ -771,7 +1040,7 @@ class Dialog{
 }
 
 class TaskDialog{
-    constructor(context,graphics) {
+    constructor(context) {
         this.block = context.add.rectangle(0, 0, g_width,g_height,Rgb(0,20,0)).setAlpha(0.5)
         this.block.setOrigin(0,0)
         this.block.setInteractive()
@@ -792,6 +1061,7 @@ class TaskDialog{
         this.resp_base_height = this.convo_y + this.convo_height
         console.log(this.resp_base_height)
         this.responses = []
+
         for(let i = 0; i<this.tasks_dict['tasks'].length;i++){
             this.responses.push(new DialogBox(context,
                 this.convo_x,
@@ -889,6 +1159,7 @@ class gameworld extends Phaser.Scene{
         this.load.image('empty','assets/empty_asset.png')
         this.load.image('crops_1','assets/crops_1.png')
         this.load.image('crops_2','assets/crops_2.png')
+        this.load.image('well','assets/well.png')
 
         this.load.image('ember_overworld','assets/ember_overworld_pixel.png')
         this.load.image('ember_happy','assets/ember_happy.png')
@@ -909,10 +1180,12 @@ class gameworld extends Phaser.Scene{
         var debug_func = function(){
             refresh_world_data()
         }
-
+        get_all_convos()
         worldspace = new WorldSpace(this,graphics)
 
-        this.button1 = new UI_Button_Rect(this,graphics,100,100,50,50,undefined,undefined,"DEBUG",debug_func)
+        this.button1 = new UI_Button_Rect(this,graphics,100,200,100,50,undefined,undefined,"Force Update",debug_func)
+        this.button2 = new UI_Button_Rect(this,graphics,100,300,100,50,undefined,undefined,"Reset World",reset_world)
+
         set_ui.apply(this);
 
         this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
@@ -933,6 +1206,8 @@ class gameworld extends Phaser.Scene{
         }
 
         this.button1.update()
+        this.button2.update()
+
         worldspace.update()
         set_ui(true)
         if(active_dialog != null){
@@ -941,7 +1216,7 @@ class gameworld extends Phaser.Scene{
     }
 }
 
-var fps_limiter = 1
+var fps_limiter = 0
 var fps_limiter_counter = 0
 
 // Reference: http://phaser.io/examples/v3/view/game-objects/graphics/generate-texture-to-sprite
@@ -960,7 +1235,7 @@ function drawRect(r_graphics,x,y,w,h,rad,line_width,color,line_color=undefined){
         }
         r_graphics.lineStyle(line_width, line_color, 1);
         // graphics.strokeRoundedRect(x, y, x+w, y+h, { tl: r, tr: r, bl: r, br: r});
-        r_graphics.strokeRoundedRect(x, y,w,h,rad);
+        //r_graphics.strokeRoundedRect(x, y,w,h,rad);
     }
 }
 
@@ -1024,4 +1299,4 @@ window.addEventListener('resize', () => {
    document.documentElement.style.setProperty('--vh', `${vh}px`); 
 });
 
-//var session_check_timer = setInterval(check_session_validity, 1000);
+var session_check_timer = setInterval(refresh_world_data, 1000);

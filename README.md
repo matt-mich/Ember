@@ -14,6 +14,8 @@ Clone this repository somewhere on your computer. Make sure your Python environm
 
 To run the UE4 version, just open the 'UE4_Game\Ember_Final.uproject' file in Unreal Engine 4.27 (Be sure to check the VaRest requirement below).
 
+(Also, if you start the engine, and it goes to the FPS_Template_Map, just switch to the Ember map in the same folder.)
+
 ## Login
 (Note: This will only work if you have the server running)
 

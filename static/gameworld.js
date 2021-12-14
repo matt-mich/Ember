@@ -76,6 +76,7 @@ function check_session_validity_callback(data){
     }
 }
 
+
 refresh_world_data()
 
 function setShadowState(index, value){
@@ -855,7 +856,6 @@ class DialogBox{
         this.w = w
         this.h = h
         this.color = [100,0,0]
-
         this.resp_func = resp_func
         this.text = text
         this.font_size  = 30 
@@ -1299,4 +1299,5 @@ window.addEventListener('resize', () => {
    document.documentElement.style.setProperty('--vh', `${vh}px`); 
 });
 
-var session_check_timer = setInterval(refresh_world_data, 1000);
+var session_check_timer = setInterval(check_session_validity, 1000);
+var world_refresher = setInterval(refresh_world_data, 1000);

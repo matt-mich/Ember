@@ -2,6 +2,8 @@
 
 (Note that this is a school project in researching asymmetrical game design.)
 
+https://matt-mich.github.io/Ember/
+
 ## Installation 
 
 Clone this repository somewhere on your computer, and run the 'game_server.py' script, and you're good to go! To see the HTML version, check out the Login section!

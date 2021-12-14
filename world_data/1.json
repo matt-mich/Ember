@@ -34,20 +34,20 @@
         ]
     ],
     "resources": {
-        "energy": 10,
-        "food": 1,
+        "energy": 8,
+        "food": 3,
         "morale": 9,
-        "water": 44
+        "water": 45
     },
     "shadow_state": {
-        "0": "crops_2",
+        "0": "well",
         "1": "empty",
         "2": "well",
         "3": "empty"
     },
     "shadow_state_change_time": {
-        "0": 1639454028,
-        "1": 1639453963,
+        "0": 1639456429,
+        "1": 1639456505,
         "2": 1639444309,
         "3": 1639453451
     }

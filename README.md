@@ -4,9 +4,13 @@
 
 https://matt-mich.github.io/Ember/
 
+## NEW DEMO VIDEO!
+A brand new demo video for the final submission! 
+https://youtu.be/Z74-fmcxhAo
+
 ## Installation 
 
-Clone this repository somewhere on your computer, and run the 'game_server.py' script, and you're good to go! To see the HTML version, check out the Login section!
+Clone this repository somewhere on your computer. Make sure your Python environment has Flask and flask_session installed, and run the 'game_server.py' script, and you're good to go! To see the HTML version, check out the Login section!
 
 To run the UE4 version, just open the 'UE4_Game\Ember_Final.uproject' file in Unreal Engine 4.27 (Be sure to check the VaRest requirement below).
 
@@ -29,7 +33,10 @@ ON UE4:
 Same concept, but all you have to do is walk up to a plot or to Ember!
 
 ## REQUIREMENT TO RUN UE4 GAME (VaRest):
-The VaRest plugin for UE4 is integral to the entire system as it allows for communication between the Flask server and both versions of the game. It must be installed into the Engine after being downloaded from the Unreal Marketplace. If the game still isn’t working, make sure the Flask Server is running and there’s console output when the game is being played. If there’s still no output, make sure VaRest is enabled in the project plugins. (The UE4 version of the game will be posted on the GitHub sometime next week)
+The VaRest plugin for UE4 is integral to the entire system as it allows for communication between the Flask server and both versions of the game. It must be installed into the Engine after being downloaded from the Unreal Marketplace. If the game still isn’t working, make sure the Flask Server is running and there’s console output when the game is being played. If there’s still no output, make sure VaRest is enabled in the project plugins.
+
+Marketplace link:
+https://www.unrealengine.com/marketplace/en-US/product/varest-plugin
 
 ## Credit
 Credit to Phaser 3 for some of the assets and the core engine:
